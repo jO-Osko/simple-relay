@@ -3,6 +3,7 @@
 pragma solidity ^0.8.20;
 import {CalldataInterface} from "./CalldataInterface.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 struct RelayData {
     uint256 uid;
@@ -18,7 +19,7 @@ struct RelayData {
 
 
 
-contract RelayGateway {
+contract RelayGateway is ReentrancyGuard {
 
     event RelayRequested(
         uint256 uid,
@@ -45,6 +46,7 @@ contract RelayGateway {
     bool public is_destination;
     CalldataInterface public calldataInterface;
     RelayData[] public executedRelays;
+    RelayData[] public requestedRelays;
 
     IERC20[] public availableTokens;
     mapping(IERC20 => address) public tokenPair;
@@ -92,11 +94,12 @@ contract RelayGateway {
         emit RelayExecuted(_relayData.uid, _relayData.relayInitiator, _relayData.relayTarget, _relayData.additionalCalldata, _relayData.sourceToken, _relayData.targetToken, _relayData.amount);
     }
 
-    function requestRelay(address _relayTarget, bytes memory _additionalCalldata, address _sourceToken, uint256 _amount) public {
+    function requestRelay(address _relayTarget, bytes memory _additionalCalldata, address _sourceToken, uint256 _amount) 
+        public nonReentrant {
         address _targetToken = tokenPair[IERC20(_sourceToken)];
         require(_targetToken != address(0), "Token not supported");
         RelayData memory _relayData = RelayData({
-            uid: executedRelays.length,
+            uid: requestedRelays.length,
             relayInitiator: msg.sender,
             relayTarget: _relayTarget,
             additionalCalldata: _additionalCalldata,
@@ -106,7 +109,7 @@ contract RelayGateway {
             executionResult: 0,
             relayDataHash: 0
         });
-        executedRelays.push(_relayData);
+        requestedRelays.push(_relayData);
         IERC20(_sourceToken).transferFrom(msg.sender, owner, _amount);
         emit RelayRequested(_relayData.uid, _relayData.relayInitiator, _relayData.relayTarget, _relayData.additionalCalldata, _relayData.sourceToken, _relayData.targetToken, _relayData.amount);
     }
@@ -125,6 +128,22 @@ contract RelayGateway {
 
     function setRelayer(address _relayer) public onlyOwner {
         relayer = _relayer;
+    }
+
+    function getRequestedRelays() public view returns (RelayData[] memory) {
+        RelayData[] memory _requestedRelays = new RelayData[](requestedRelays.length);
+        for(uint256 i = 0; i < requestedRelays.length; i++){
+            _requestedRelays[i] = requestedRelays[i];
+        }
+        return _requestedRelays;
+    }
+
+    function getExecutedRelays() public view returns (RelayData[] memory) {
+        RelayData[] memory _executedRelays = new RelayData[](executedRelays.length);
+        for(uint256 i = 0; i < executedRelays.length; i++){
+            _executedRelays[i] = executedRelays[i];
+        }
+        return _executedRelays;
     }
 
 }
