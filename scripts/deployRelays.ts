@@ -1,7 +1,7 @@
 import "@nomicfoundation/hardhat-verify";
 import hardhat, { artifacts, ethers } from 'hardhat';
 import { COSTON_TOKENS, SEPOLIA_TOKENS } from "../lib/constants";
-import { requestVerification } from "../lib/utils";
+import { requestVerification, sleep } from "../lib/utils";
 const RelayGateway = artifacts.require('RelayGateway');
 
 
@@ -25,7 +25,9 @@ async function main() {
     await requestVerification(relayer.address, args);
     console.log("Relayer address: ", relayer.address)
     for (let i = 0; i < tokensCoston.length; i++) {
+
         await relayer.addTokenPair(tokensCoston[i], tokensSepolia[i]);
+        await sleep(1)
     }
 
 }
