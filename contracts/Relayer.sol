@@ -85,7 +85,7 @@ contract RelayGateway is ReentrancyGuard {
     function executeRelay(RelayData memory _relayData) public onlyRelayer {
         // TODO: check tokens
         if(_relayData.amount > 0){
-            IERC20(_relayData.sourceToken).transfer(_relayData.relayTarget, _relayData.amount);            
+            IERC20(_relayData.targetToken).transfer(_relayData.relayTarget, _relayData.amount);            
         }
         if(_relayData.additionalCalldata.length > 0){
             calldataInterface.executeCall(_relayData.relayTarget, _relayData.additionalCalldata);
