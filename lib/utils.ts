@@ -39,6 +39,7 @@ export async function increaseTimeTo(tm: number) {
 
 export async function requestVerification(address: string, args: any[], repeat: number = 5) {
     for (let j = 0; j < repeat; j++) {
+        console.log("hh")
         try {
             await run("verify:verify", {
                 address: address,
